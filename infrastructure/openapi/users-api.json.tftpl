@@ -1,0 +1,131 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "${api_name}",
+    "description": "Serverless Users Service: CRUD operations on user records.",
+    "version": "1.0.0"
+  },
+  "security": [
+    {
+%{ if authorizer_enabled ~}
+      "UsersTokenAuthorizer": []
+%{ else ~}
+      "sigv4": []
+%{ endif ~}
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "listUsers",
+        "summary": "List all user records",
+        "responses": {
+          "200": { "description": "A list of user records" },
+          "500": { "description": "Internal server error" }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "${lambda_invoke_arn}",
+          "passthroughBehavior": "when_no_match"
+        }
+      },
+      "post": {
+        "operationId": "createUser",
+        "summary": "Create a user record",
+        "responses": {
+          "201": { "description": "The created user record" },
+          "400": { "description": "Invalid request body" },
+          "500": { "description": "Internal server error" }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "${lambda_invoke_arn}",
+          "passthroughBehavior": "when_no_match"
+        }
+      }
+    },
+    "/users/{userid}": {
+      "parameters": [
+        {
+          "name": "userid",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "getUser",
+        "summary": "Fetch one user record",
+        "responses": {
+          "200": { "description": "The requested user record" },
+          "404": { "description": "No such user" },
+          "500": { "description": "Internal server error" }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "${lambda_invoke_arn}",
+          "passthroughBehavior": "when_no_match"
+        }
+      },
+      "put": {
+        "operationId": "updateUser",
+        "summary": "Replace the name and email of a user record",
+        "responses": {
+          "200": { "description": "The updated user record" },
+          "400": { "description": "Invalid request body" },
+          "404": { "description": "No such user" },
+          "500": { "description": "Internal server error" }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "${lambda_invoke_arn}",
+          "passthroughBehavior": "when_no_match"
+        }
+      },
+      "delete": {
+        "operationId": "deleteUser",
+        "summary": "Remove a user record",
+        "responses": {
+          "200": { "description": "An empty JSON object" },
+          "404": { "description": "No such user" },
+          "500": { "description": "Internal server error" }
+        },
+        "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
+          "httpMethod": "POST",
+          "uri": "${lambda_invoke_arn}",
+          "passthroughBehavior": "when_no_match"
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+%{ if authorizer_enabled ~}
+      "UsersTokenAuthorizer": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "x-amazon-apigateway-authtype": "custom",
+        "x-amazon-apigateway-authorizer": {
+          "type": "token",
+          "authorizerUri": "${authorizer_invoke_arn}",
+          "identitySource": "method.request.header.Authorization",
+          "authorizerResultTtlInSeconds": 300
+        }
+      }
+%{ else ~}
+      "sigv4": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "x-amazon-apigateway-authtype": "awsSigv4"
+      }
+%{ endif ~}
+    }
+  }
+}
